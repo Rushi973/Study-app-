@@ -42,7 +42,8 @@
       <button id="signin" type="button">Sign in</button>
       <p id="authState">Not signed in</p>
     </div>
-
+<button id="rawTest" type="button">Raw Sign-In Test</button>
+<pre id="rawOut" style="white-space:pre-wrap"></pre>
     <!-- Stopwatch + Save -->
     <div class="panel">
       <div id="timer">00:00:00</div>
@@ -219,6 +220,32 @@ signinBtn.onclick = async () => {
 };
 
 ping();
+    const rawBtn = document.getElementById("rawTest");
+const rawOut = document.getElementById("rawOut");
+
+// your values
+const SB_URL  = "https://iwfesilevqjumoyfrpzt.supabase.co";
+const SB_KEY  = "PASTE_FULL_ANON_KEY";
+
+rawBtn.onclick = async () => {
+  rawOut.textContent = "Testing…";
+  const email = (document.getElementById("email").value || "").trim();
+  const password = document.getElementById("password").value || "";
+  try {
+    const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: {
+        "apikey": SB_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email, password })
+    });
+    const text = await res.text();
+    rawOut.textContent = `HTTP ${res.status}\n${text}`;
+  } catch (e) {
+    rawOut.textContent = `JS error: ${e.message}`;
+  }
+};
 
     // ---------- Stopwatch ----------
     let startTime=0, elapsed=0, tick=null;
