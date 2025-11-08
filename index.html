@@ -227,6 +227,107 @@ todoListEl && todoListEl.addEventListener("click", (e)=>{
 });
 
 renderTodos();
+    // ===== Habit Tracker =====
+function loadHabits(){ try{return JSON.parse(localStorage.getItem("habits")||"[]");}catch{return[];} }
+function saveHabits(h){ localStorage.setItem("habits", JSON.stringify(h)); }
+
+const habitName = document.getElementById("habitName");
+const habitAdd  = document.getElementById("habitAdd");
+const habitList = document.getElementById("habitList");
+
+// build a 7-day grid for each habit, store checked days keyed by ISO date
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+function renderHabits(){
+  const habits = loadHabits();
+  habitList.innerHTML = "";
+  if (!habits.length){ habitList.textContent = "No habits yet."; return; }
+  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  habits.forEach((h,idx)=>{
+    const wrap = document.createElement("div");
+    wrap.style.margin = "8px 0";
+    const title = document.createElement("div");
+    title.innerHTML = `<b>${h.name}</b> <button data-idx="${idx}" class="habit-del" style="float:right">Delete</button>`;
+    wrap.appendChild(title);
+    const row = document.createElement("div");
+    days.forEach((d,i)=>{
+      const key = `${d}-${todayISO()}`; // simple per-day key
+      const checked = !!h.done?.[key];
+      const box = document.createElement("label");
+      box.style.marginRight = "8px";
+      box.innerHTML = `<input type="checkbox" data-idx="${idx}" data-key="${key}" class="habit-toggle" ${checked?"checked":""}> ${d}`;
+      row.appendChild(box);
+    });
+    wrap.appendChild(row);
+    habitList.appendChild(wrap);
+  });
+}
+habitAdd && (habitAdd.onclick = ()=>{
+  const name = (habitName.value||"").trim();
+  if (!name) { alert("Enter a habit name"); return; }
+  const habits = loadHabits();
+  habits.push({ name, done:{} });
+  saveHabits(habits);
+  habitName.value = "";
+  renderHabits();
+});
+habitList && habitList.addEventListener("click",(e)=>{
+  if (e.target.classList.contains("habit-del")){
+    const idx = Number(e.target.getAttribute("data-idx"));
+    const habits = loadHabits(); habits.splice(idx,1); saveHabits(habits); renderHabits();
+  }
+});
+habitList && habitList.addEventListener("change",(e)=>{
+  if (e.target.classList.contains("habit-toggle")){
+    const idx = Number(e.target.getAttribute("data-idx"));
+    const key = e.target.getAttribute("data-key");
+    const habits = loadHabits();
+    habits[idx].done = habits[idx].done||{};
+    habits[idx].done[key] = e.target.checked;
+    saveHabits(habits);
+  }
+});
+renderHabits();
+
+// ===== Weekly Schedule (manual) =====
+function loadSchedule(){ try{return JSON.parse(localStorage.getItem("schedule")||"[]");}catch{return[];} }
+function saveSchedule(s){ localStorage.setItem("schedule", JSON.stringify(s)); }
+
+const schDay = document.getElementById("schDay");
+const schStart = document.getElementById("schStart");
+const schEnd = document.getElementById("schEnd");
+const schSubject = document.getElementById("schSubject");
+const schAdd = document.getElementById("schAdd");
+const scheduleList = document.getElementById("scheduleList");
+
+function renderSchedule(){
+  const rows = loadSchedule();
+  if (!rows.length){ scheduleList.textContent = "No items."; return; }
+  const order = {Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6,Sun:7};
+  rows.sort((a,b)=> (order[a.day]-order[b.day]) || (a.start < b.start ? -1 : 1));
+  scheduleList.innerHTML = rows.map((r,i)=>
+    `${r.day} ${r.start}-${r.end} — ${r.subject} <button data-i="${i}" class="sch-del" style="float:right">Delete</button>`
+  ).join("<br>");
+}
+schAdd && (schAdd.onclick = ()=>{
+  const day = schDay.value;
+  const start = schStart.value;
+  const end = schEnd.value;
+  const subject = (schSubject.value||"").trim();
+  if (!day || !start || !end || !subject){ alert("Fill all fields"); return; }
+  const rows = loadSchedule();
+  rows.push({ day, start, end, subject });
+  saveSchedule(rows);
+  schSubject.value = ""; schStart.value = ""; schEnd.value = "";
+  renderSchedule();
+});
+scheduleList && scheduleList.addEventListener("click",(e)=>{
+  if (e.target.classList.contains("sch-del")){
+    const i = Number(e.target.getAttribute("data-i"));
+    const rows = loadSchedule(); rows.splice(i,1); saveSchedule(rows); renderSchedule();
+  }
+});
+renderSchedule();
   </script>
 </body>
 </html>    // single-file stopwatch
