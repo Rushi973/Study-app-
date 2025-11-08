@@ -114,11 +114,51 @@
   </div>
 
   <script>
-    // ---------- Supabase init (replace with your values) ----------
-    const sb = window.supabase.createClient(
-      "SUPABASE_URL_HERE",          // e.g. https://xxxx.supabase.co
-      "SUPABASE_ANON_KEY_HERE"      // long key starting with eyJ...
-    );
+  // ===== AUTH DIAGNOSTIC START =====
+const authState = document.getElementById("authState");
+const emailEl   = document.getElementById("email");
+const passEl    = document.getElementById("password");
+const signupBtn = document.getElementById("signup");
+const signinBtn = document.getElementById("signin");
+
+const dbg = (m)=>{ authState.textContent = m; };
+
+dbg("boot");
+
+// 1) SDK check
+if (!window.supabase) { dbg("SDK missing"); }
+// INIT: replace with your real values
+const SB_URL  = "https://iwfesilevqjumoyfrpzt.supabase.co";   // your URL
+const SB_ANON = "PASTE_FULL_ANON_KEY_HERE";                    // your anon key
+const sb = window.supabase ? window.supabase.createClient(SB_URL, SB_ANON) : null;
+if (sb) dbg("SDK ok");
+
+// 2) Click wiring check
+signinBtn.onclick = async () => {
+  dbg("click");
+  if (!sb) return;
+  const email = (emailEl.value||"").trim();
+  const password = passEl.value||"";
+  if (!email || !password) { dbg("need email+password"); return; }
+
+  dbg("signing...");
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) { dbg("Sign in error: " + error.message); return; }
+  dbg("signed in");
+  const u = await sb.auth.getUser();
+  dbg(u.error ? ("getUser error: " + u.error.message) : ("Signed in: " + (u.data.user?.email||"")));
+};
+
+signupBtn.onclick = async () => {
+  dbg("signup click");
+  if (!sb) return;
+  const email = (emailEl.value||"").trim();
+  const password = passEl.value||"";
+  if (!email || !password) { dbg("need email+password"); return; }
+  const { error } = await sb.auth.signUp({ email, password });
+  dbg(error ? ("Sign up error: " + error.message) : "Sign-up OK (or email sent). Try Sign in.");
+};
+// ===== AUTH DIAGNOSTIC END =====
 
     // ===== Supabase Auth — diagnostic =====
 const SB_URL  = "https://iwfesilevqjumoyfrpzt.supabase.co";            // <-- your URL
