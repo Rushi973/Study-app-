@@ -99,6 +99,11 @@
   </div>
 
   <script>
+    // Supabase init
+const sb = supabase.createClient(
+  "SUPABASE_URL",
+  "SUPABASE_ANON_KEY"
+);
     // ========= Stopwatch =========
     let startTime=0, elapsed=0, tick=null;
     const $=id=>document.getElementById(id);
