@@ -358,3 +358,28 @@ todoListEl && todoListEl.addEventListener("click", (e)=>{
 });
 
 renderTodos();
+// --- Auth (email/password) ---
+const emailEl = document.getElementById("email");
+const passEl  = document.getElementById("password");
+const signupBtn = document.getElementById("signup");
+const signinBtn = document.getElementById("signin");
+const authState = document.getElementById("authState");
+
+async function refreshAuthState(){
+  const { data } = await sb.auth.getUser();
+  authState.textContent = data.user ? `Signed in: ${data.user.email}` : "Not signed in";
+}
+
+signupBtn && (signupBtn.onclick = async ()=>{
+  const { error } = await sb.auth.signUp({ email: emailEl.value, password: passEl.value });
+  if (error) alert(error.message); else alert("Check your email to confirm.");
+  refreshAuthState();
+});
+
+signinBtn && (signinBtn.onclick = async ()=>{
+  const { error } = await sb.auth.signInWithPassword({ email: emailEl.value, password: passEl.value });
+  if (error) alert(error.message);
+  refreshAuthState();
+});
+
+refreshAuthState();
