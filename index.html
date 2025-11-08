@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#c0522a" />
   <title>Study App</title>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     :root{--terra:#c0522a;--beige:#f3eadf;--card:#fff7f1;--ink:#2a2a2a}
     *{box-sizing:border-box}
@@ -22,29 +26,23 @@
     select,input{padding:8px;margin:4px}
     #todoBox input{padding:8px;margin:4px}
     .todo-done{text-decoration:line-through;opacity:.6}
+    pre{background:#fff;border:1px solid #eee;border-radius:8px;padding:10px;overflow:auto}
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="container">
     <h1>Study App</h1>
+
+    <!-- Account -->
     <div class="panel">
-  <h3>Account</h3>
-  <input id="email" placeholder="Email" style="width:100%;margin-bottom:6px;">
-  <input id="password" type="password" placeholder="Password" style="width:100%;margin-bottom:8px;">
-  <button id="signup" type="button">Sign up</button>
-  <button id="signin" type="button">Sign in</button>
-  <p id="authState">Not signed in</p>
+      <h3>Account</h3>
+      <input id="email" placeholder="Email" style="width:100%;margin-bottom:6px;">
+      <input id="password" type="password" placeholder="Password" style="width:100%;margin-bottom:8px;">
+      <button id="signup" type="button">Sign up</button>
+      <button id="signin" type="button">Sign in</button>
+      <p id="authState">Not signed in</p>
     </div>
-<div class="panel">
-  <h3>Account</h3>
-  <input id="email" placeholder="Email" style="width:100%;margin-bottom:6px;">
-  <input id="password" placeholder="Password" type="password" style="width:100%;margin-bottom:8px;">
-  <button id="signup">Sign up</button>
-  <button id="signin">Sign in</button>
-  <p id="authState"></p>
-</div>
+
     <!-- Stopwatch + Save -->
     <div class="panel">
       <div id="timer">00:00:00</div>
@@ -75,7 +73,7 @@
       <div id="todoBox">
         <input id="todoText" placeholder="Task" />
         <input id="todoDue" type="date" />
-        <button id="todoAdd">Add</button>
+        <button id="todoAdd" type="button">Add</button>
         <ul id="todoList"></ul>
       </div>
     </div>
@@ -85,7 +83,7 @@
       <h3>Habit Tracker</h3>
       <div>
         <input id="habitName" placeholder="Habit name (e.g., Read 20 min)" />
-        <button id="habitAdd">Add Habit</button>
+        <button id="habitAdd" type="button">Add Habit</button>
       </div>
       <div id="habitList">No habits yet.</div>
     </div>
@@ -101,22 +99,61 @@
         <input id="schStart" type="time" />
         <input id="schEnd" type="time" />
         <input id="schSubject" placeholder="Subject / Task" />
-        <button id="schAdd">Add</button>
+        <button id="schAdd" type="button">Add</button>
       </div>
       <div id="scheduleList" style="margin-top:8px;">No items.</div>
-      <div class="panel">
-  <h3>Scan Timetable (OCR)</h3>
-  <input type="file" id="ttFile" accept="image/*">
-  <button id="ttUploadScan">Upload & Scan</button>
-  <pre id="ttResult" style="white-space:pre-wrap;"></pre>
-      </div>
+    </div>
+
+    <!-- Scan Timetable (OCR) -->
+    <div class="panel">
+      <h3>Scan Timetable (OCR)</h3>
+      <input type="file" id="ttFile" accept="image/*">
+      <button id="ttUploadScan" type="button">Upload & Scan</button>
+      <pre id="ttResult" style="white-space:pre-wrap;"></pre>
     </div>
   </div>
 
   <script>
-    // Supabase init
+    // ---------- Supabase init (replace with your values) ----------
+    const sb = window.supabase.createClient(
+      "SUPABASE_URL_HERE",          // e.g. https://xxxx.supabase.co
+      "SUPABASE_ANON_KEY_HERE"      // long key starting with eyJ...
+    );
 
-    // ========= Stopwatch =========
+    // ---------- Auth ----------
+    const emailEl = document.getElementById("email");
+    const passEl  = document.getElementById("password");
+    const signupBtn = document.getElementById("signup");
+    const signinBtn = document.getElementById("signin");
+    const authState = document.getElementById("authState");
+
+    function setAuth(msg){ authState.textContent = msg; }
+
+    async function showUser(){
+      const { data, error } = await sb.auth.getUser();
+      if (error) setAuth("getUser error: " + error.message);
+      else setAuth(data.user ? `Signed in: ${data.user.email}` : "Not signed in");
+    }
+    sb.auth.onAuthStateChange(()=>showUser());
+
+    signupBtn.onclick = async () => {
+      const email = (emailEl.value||"").trim();
+      const password = passEl.value||"";
+      if (!email || !password) return setAuth("Enter email and password");
+      const { error } = await sb.auth.signUp({ email, password });
+      setAuth(error ? "Sign up error: " + error.message : "Sign-up email sent. Confirm, then sign in.");
+    };
+
+    signinBtn.onclick = async () => {
+      const email = (emailEl.value||"").trim();
+      const password = passEl.value||"";
+      if (!email || !password) return setAuth("Enter email and password");
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      setAuth(error ? "Sign in error: " + error.message : "Signed in.");
+      if (!error) showUser();
+    };
+
+    // ---------- Stopwatch ----------
     let startTime=0, elapsed=0, tick=null;
     const $=id=>document.getElementById(id);
     const timerEl=$("timer"), statusEl=$("status");
@@ -127,10 +164,6 @@
       const s=Math.floor(ms/1000);
       const h=String(Math.floor(s/3600)).padStart(2,"0");
       const m=String(Math.floor((s%3600)/60)).padStart(2,"0");
-  const sb = supabase.createClient(
-  "https://iwfesilevqjumoyfrpzt.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....(your key continues)...."
-);
       const sec=String(s%60).padStart(2,"0");
       return `${h}:${m}:${sec}`;
     };
@@ -154,11 +187,11 @@
       startTime=0; elapsed=0; render(); statusEl.textContent="Reset";
     };
 
-    // ========= Local storage helpers =========
-    const loadJSON = (k,def)=>{ try{return JSON.parse(localStorage.getItem(k)??def);}catch{return JSON.parse(def);} };
-    const saveJSON = (k,v)=>localStorage.setItem(k,JSON.stringify(v));
+    // ---------- Local storage helpers ----------
+    const loadJSON=(k,def)=>{ try{return JSON.parse(localStorage.getItem(k)??def);}catch{return JSON.parse(def);} };
+    const saveJSON=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 
-    // ========= Sessions / Achievements =========
+    // ---------- Sessions / Achievements ----------
     const loadSessions=()=>loadJSON("sessions","[]");
     const saveSessions=v=>saveJSON("sessions",v);
     const addSession=ms=>{
@@ -216,7 +249,7 @@
       renderWeeklyReport();
     };
 
-    // ========= To-Dos =========
+    // ---------- To-Dos ----------
     const todoText=$("todoText"), todoDue=$("todoDue"), todoAdd=$("todoAdd"), todoListEl=$("todoList");
     const loadTodos=()=>loadJSON("todos","[]");
     const saveTodos=t=>saveJSON("todos",t);
@@ -258,7 +291,7 @@
       }
     });
 
-    // ========= Habit Tracker =========
+    // ---------- Habit Tracker ----------
     const habitName=$("habitName"), habitAdd=$("habitAdd"), habitList=$("habitList");
     const loadHabits=()=>loadJSON("habits","[]");
     const saveHabits=h=>saveJSON("habits",h);
@@ -308,7 +341,7 @@
       }
     });
 
-    // ========= Weekly Schedule =========
+    // ---------- Weekly Schedule ----------
     const schDay=$("schDay"), schStart=$("schStart"), schEnd=$("schEnd"), schSubject=$("schSubject"), schAdd=$("schAdd"), scheduleList=$("scheduleList");
     const loadSchedule=()=>loadJSON("schedule","[]");
     const saveSchedule=s=>saveJSON("schedule",s);
@@ -334,108 +367,35 @@
         const rows=loadSchedule(); rows.splice(i,1); saveSchedule(rows); renderSchedule();
       }
     });
-// ===== Supabase Auth (robust) =====
-const sb = window.supabase.createClient(
-  "https://iwfesilevqjumoyfrpzt.supabase.co",  // <-- your URL
-  "REPLACE_WITH_YOUR_ANON_KEY"                 // <-- your anon key
-);
 
-const emailEl = document.getElementById("email");
-const passEl  = document.getElementById("password");
-const signupBtn = document.getElementById("signup");
-const signinBtn = document.getElementById("signin");
-const authState = document.getElementById("authState");
+    // ---------- OCR Upload -> Edge Function (echo) ----------
+    const ttFile=document.getElementById("ttFile");
+    const ttBtn=document.getElementById("ttUploadScan");
+    const ttResult=document.getElementById("ttResult");
 
-function setStatus(msg){ authState.textContent = msg; }
+    ttBtn && (ttBtn.onclick = async () => {
+      const { data: u } = await sb.auth.getUser();
+      if (!u.user) { alert("Sign in first."); return; }
+      if (!ttFile.files?.[0]) { alert("Choose an image."); return; }
 
-async function showUser(){
-  const { data, error } = await sb.auth.getUser();
-  if (error) setStatus("getUser error: " + error.message);
-  else setStatus(data.user ? `Signed in: ${data.user.email}` : "Not signed in");
-}
+      const file = ttFile.files[0];
+      const key  = `${u.user.id}/${Date.now()}-${file.name}`;
 
-// keep UI in sync with auth changes
-sb.auth.onAuthStateChange((_event, _session) => { showUser(); });
+      // upload to private bucket 'timetables'
+      const up = await sb.storage.from("timetables").upload(key, file, { upsert:false });
+      if (up.error) { ttResult.textContent = "Upload failed: " + up.error.message; return; }
 
-signupBtn.onclick = async () => {
-  try {
-    const email = (emailEl.value||"").trim();
-    const password = passEl.value||"";
-    if (!email || !password) return setStatus("Enter email and password");
-    const { error } = await sb.auth.signUp({ email, password });
-    if (error) return setStatus("Sign up error: " + error.message);
-    setStatus("Sign-up email sent. Confirm it, then sign in.");
-  } catch(e){ setStatus("Sign up JS error: " + e.message); }
-};
+      // call edge function (must be created in Supabase as 'ocr-timetable')
+      const fn = await sb.functions.invoke("ocr-timetable", { body: { path: `timetables/${key}` } });
+      if (fn.error) { ttResult.textContent = "OCR failed: " + fn.error.message; return; }
 
-signinBtn.onclick = async () => {
-  try {
-    const email = (emailEl.value||"").trim();
-    const password = passEl.value||"";
-    if (!email || !password) return setStatus("Enter email and password");
-    const { error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) return setStatus("Sign in error: " + error.message);
-    setStatus("Signed in. Loading user…");
-    await showUser();
-  } catch(e){ setStatus("Sign in JS error: " + e.message); }
-};
+      ttResult.textContent = JSON.stringify(fn.data, null, 2);
+    });
 
-showUser();
-    // ===== Init screens =====
-    render();           // timer
-    renderAchievements();
-    renderWeeklyReport();
-    renderTodos();
-    renderHabits();
-    renderSchedule();
-    // Authentication logic
-const emailEl = document.getElementById("email");
-const passEl  = document.getElementById("password");
-const signupBtn = document.getElementById("signup");
-const signinBtn = document.getElementById("signin");
-const authState = document.getElementById("authState");
-
-async function refreshAuthState(){
-  const { data } = await sb.auth.getUser();
-  authState.textContent = data.user ? `Signed in: ${data.user.email}` : "Not signed in";
-}
-
-signupBtn.onclick = async () => {
-  const { error } = await sb.auth.signUp({ email: emailEl.value, password: passEl.value });
-  authState.textContent = error ? error.message : "Sign-up email sent. Check inbox.";
-};
-
-signinBtn.onclick = async () => {
-  const { error } = await sb.auth.signInWithPassword({ email: emailEl.value, password: passEl.value });
-  authState.textContent = error ? error.message : "Signed in.";
-  if (!error) refreshAuthState();
-};
-
-refreshAuthState();
-    // --- Upload image to Supabase Storage, then call OCR function ---
-const ttFile   = document.getElementById("ttFile");
-const ttBtn    = document.getElementById("ttUploadScan");
-const ttResult = document.getElementById("ttResult");
-
-ttBtn && (ttBtn.onclick = async () => {
-  // must be signed in
-  const { data: u } = await sb.auth.getUser();
-  if (!u.user) { alert("Sign in first."); return; }
-  if (!ttFile.files?.[0]) { alert("Choose an image."); return; }
-
-  // upload to private bucket "timetables" with path <uid>/<timestamp>-<name>
-  const file = ttFile.files[0];
-  const key  = `${u.user.id}/${Date.now()}-${file.name}`;
-  const up = await sb.storage.from("timetables").upload(key, file, { upsert:false });
-  if (up.error) { alert("Upload failed: " + up.error.message); return; }
-
-  // call the Edge Function (we create it in 4.2)
-  const fn = await sb.functions.invoke("ocr-timetable", { body: { path: `timetables/${key}` } });
-  if (fn.error) { alert("OCR failed: " + fn.error.message); return; }
-
-  // show what came back
-  ttResult.textContent = JSON.stringify(fn.data, null, 2);
-});
+    // ---------- Init ----------
+    showUser();
+    const renderAll = () => { render(); renderAchievements(); renderWeeklyReport(); renderTodos(); renderHabits(); renderSchedule(); };
+    renderAll();
   </script>
 </body>
 </html>
