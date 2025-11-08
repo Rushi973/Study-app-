@@ -358,6 +358,30 @@ signinBtn.onclick = async () => {
 };
 
 refreshAuthState();
+    // --- Upload image to Supabase Storage, then call OCR function ---
+const ttFile   = document.getElementById("ttFile");
+const ttBtn    = document.getElementById("ttUploadScan");
+const ttResult = document.getElementById("ttResult");
+
+ttBtn && (ttBtn.onclick = async () => {
+  // must be signed in
+  const { data: u } = await sb.auth.getUser();
+  if (!u.user) { alert("Sign in first."); return; }
+  if (!ttFile.files?.[0]) { alert("Choose an image."); return; }
+
+  // upload to private bucket "timetables" with path <uid>/<timestamp>-<name>
+  const file = ttFile.files[0];
+  const key  = `${u.user.id}/${Date.now()}-${file.name}`;
+  const up = await sb.storage.from("timetables").upload(key, file, { upsert:false });
+  if (up.error) { alert("Upload failed: " + up.error.message); return; }
+
+  // call the Edge Function (we create it in 4.2)
+  const fn = await sb.functions.invoke("ocr-timetable", { body: { path: `timetables/${key}` } });
+  if (fn.error) { alert("OCR failed: " + fn.error.message); return; }
+
+  // show what came back
+  ttResult.textContent = JSON.stringify(fn.data, null, 2);
+});
   </script>
 </body>
 </html>
