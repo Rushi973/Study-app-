@@ -2,46 +2,60 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#c0522a">
   <link rel="stylesheet" href="style.css">
   <title>Study App</title>
 </head>
 <body>
-  <h1>Study Timer</h1>
+  <div class="container">
+    <h1>Study App</h1>
 
-  <div id="timer">00:00:00</div>
+    <div class="panel">
+      <div id="timer">00:00:00</div>
+      <div class="controls">
+        <button id="start">Start</button>
+        <button id="pause">Pause</button>
+        <button id="reset">Reset</button>
+        <button id="save">Save Achievement</button>
+        <button id="focusOn">Enter Focus Mode</button>
+        <button id="focusOff">Exit Focus Mode</button>
+      </div>
+      <p id="status"></p>
+    </div>
 
-  <div class="controls">
-    <button id="start">Start</button>
-    <button id="pause">Pause</button>
-    <button id="reset">Reset</button>
-    <button id="save">Save Achievement</button>
-  </div>
-<h3>Break & Audio</h3>
-  <div>
-    <label>Audio URL (your file or a legal stream):</label>
-    <input id="audioUrl" placeholder="https://example.com/hanuman-chalisa.mp3" style="width:100%;max-width:420px">
-    <button id="saveAudio">Save Audio</button>
-    <label style="display:block;margin-top:8px;">
-      <input type="checkbox" id="autoPlay"> Auto-play during long-session break
-    </label>
-  </div>
-  <div class="controls">
-    <!-- existing buttons -->
-    <button id="focusOn">Enter Focus Mode</button>
-    <button id="focusOff">Exit Focus Mode</button>
-  </div>
-  <h3>Weekly Report</h3>
-  <div id="report">No data yet.</div>
+    <div class="panel">
+      <h3>Weekly Report</h3>
+      <div id="report">No data yet.</div>
+    </div>
 
-  <h3>Achievements</h3>
-  <ul id="achievements"></ul>
-<h3>To-Dos</h3>
-  <div id="todoBox">
-    <input id="todoText" placeholder="Task" />
-    <input id="todoDue" type="date" />
-    <button id="todoAdd">Add</button>
-    <ul id="todoList"></ul>
+    <div class="panel">
+      <h3>Achievements</h3>
+      <ul id="achievements"></ul>
+    </div>
+
+    <div class="panel">
+      <h3>Break & Audio</h3>
+      <div>
+        <label>Audio URL:</label>
+        <input id="audioUrl" placeholder="https://example.com/hanuman-chalisa.mp3" style="width:100%;max-width:420px">
+        <button id="saveAudio">Save Audio</button>
+        <label style="display:block;margin-top:8px;">
+          <input type="checkbox" id="autoPlay"> Auto-play during long-session break
+        </label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>To-Dos</h3>
+      <div id="todoBox">
+        <input id="todoText" placeholder="Task" />
+        <input id="todoDue" type="date" />
+        <button id="todoAdd">Add</button>
+        <ul id="todoList"></ul>
+      </div>
+    </div>
   </div>
+
   <script src="script.js"></script>
 </body>
 </html>
