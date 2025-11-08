@@ -120,38 +120,56 @@
       "SUPABASE_ANON_KEY_HERE"      // long key starting with eyJ...
     );
 
-    // ---------- Auth ----------
-    const emailEl = document.getElementById("email");
-    const passEl  = document.getElementById("password");
-    const signupBtn = document.getElementById("signup");
-    const signinBtn = document.getElementById("signin");
-    const authState = document.getElementById("authState");
+    // ===== Supabase Auth — diagnostic =====
+const SB_URL  = "https://iwfesilevqjumoyfrpzt.supabase.co";            // <-- your URL
+const SB_ANON = "PASTE_YOUR_FULL_ANON_KEY_HERE";                        // <-- your anon key
+if (!window.supabase) alert("Supabase SDK not loaded. Check <head> script tag.");
+const sb = window.supabase.createClient(SB_URL, SB_ANON);
 
-    function setAuth(msg){ authState.textContent = msg; }
+const emailEl   = document.getElementById("email");
+const passEl    = document.getElementById("password");
+const signupBtn = document.getElementById("signup");
+const signinBtn = document.getElementById("signin");
+const authState = document.getElementById("authState");
 
-    async function showUser(){
-      const { data, error } = await sb.auth.getUser();
-      if (error) setAuth("getUser error: " + error.message);
-      else setAuth(data.user ? `Signed in: ${data.user.email}` : "Not signed in");
-    }
-    sb.auth.onAuthStateChange(()=>showUser());
+function show(msg){ authState.textContent = msg; }
 
-    signupBtn.onclick = async () => {
-      const email = (emailEl.value||"").trim();
-      const password = passEl.value||"";
-      if (!email || !password) return setAuth("Enter email and password");
-      const { error } = await sb.auth.signUp({ email, password });
-      setAuth(error ? "Sign up error: " + error.message : "Sign-up email sent. Confirm, then sign in.");
-    };
+async function ping(){
+  try {
+    const { data, error } = await sb.auth.getUser();
+    if (error) show("getUser error: " + error.message);
+    else show(data.user ? `Signed in: ${data.user.email}` : "Not signed in");
+  } catch (e) {
+    show("SDK/createClient error: " + (e?.message||e));
+  }
+}
 
-    signinBtn.onclick = async () => {
-      const email = (emailEl.value||"").trim();
-      const password = passEl.value||"";
-      if (!email || !password) return setAuth("Enter email and password");
-      const { error } = await sb.auth.signInWithPassword({ email, password });
-      setAuth(error ? "Sign in error: " + error.message : "Signed in.");
-      if (!error) showUser();
-    };
+signupBtn.onclick = async () => {
+  const email = (emailEl.value||"").trim();
+  const password = passEl.value||"";
+  if (!email || !password) return show("Enter email and password");
+  show("Signing up…");
+  try {
+    const { data, error } = await sb.auth.signUp({ email, password });
+    if (error) return show("Sign up error: " + error.message);
+    show("Sign-up OK. If email confirmation is OFF, proceed to Sign in.");
+  } catch(e){ show("Sign up JS error: " + (e?.message||e)); }
+};
+
+signinBtn.onclick = async () => {
+  const email = (emailEl.value||"").trim();
+  const password = passEl.value||"";
+  if (!email || !password) return show("Enter email and password");
+  show("Signing in…");
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) return show("Sign in error: " + error.message);
+    show("Signed in. Loading user…");
+    await ping();
+  } catch(e){ show("Sign in JS error: " + (e?.message||e)); }
+};
+
+ping();
 
     // ---------- Stopwatch ----------
     let startTime=0, elapsed=0, tick=null;
