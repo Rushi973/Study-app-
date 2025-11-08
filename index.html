@@ -25,39 +25,42 @@
   <pre id="rawOut"></pre>
 
   <script>
-    // Init
-    const SB_URL  = "https://iwfesilevqjumoyfrpzt.supabase.co";
-    const SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3ZmVzaWxldnFqdW1veWZycHp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MTgwOTYsImV4cCI6MjA3ODA5NDA5Nn0.YMtYRdS6NoEkyZibCa0RWAspfs5uWd14gmBEfFFKAWQ";
-    if (!window.supabase) document.getElementById("authState").textContent = "SDK missing";
-    const sb = supabase.createClient(SB_URL, SB_ANON);
+    // ---- Supabase Auth (working) ----
+const SB_URL  = "https://iwfesilevqjumoyfrpzt.supabase.co";
+const SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3ZmVzaWxldnFqdW1veWZycHp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MTgwOTYsImV4cCI6MjA3ODA5NDA5Nn0.YMtYRdS6NoEkyZibCa0RWAspfs5uWd14gmBEfFFKAWQ";
+const sb = window.supabase.createClient(SB_URL, SB_ANON);
 
-    const emailEl = document.getElementById("email");
-    const passEl  = document.getElementById("password");
-    const state   = document.getElementById("authState");
-    const rawOut  = document.getElementById("rawOut");
+const emailEl   = document.getElementById("email");
+const passEl    = document.getElementById("password");
+const signupBtn = document.getElementById("signup");
+const signinBtn = document.getElementById("signin");
+const authState = document.getElementById("authState");
 
-    async function showUser(){
-      const { data, error } = await sb.auth.getUser();
-      state.textContent = error ? ("getUser error: " + error.message)
-                                : (data.user ? `Signed in: ${data.user.email}` : "Not signed in");
-    }
+function setAuth(m){ authState.textContent = m; }
+async function showUser(){
+  const { data, error } = await sb.auth.getUser();
+  setAuth(error ? ("getUser error: " + error.message)
+                : (data.user ? `Signed in: ${data.user.email}` : "Not signed in"));
+}
+sb.auth.onAuthStateChange(()=>showUser());
 
-    document.getElementById("signup").onclick = async () => {
-      const email = (emailEl.value||"").trim();
-      const password = passEl.value||"";
-      if (!email || !password) { state.textContent = "need email+password"; return; }
-      const { error } = await sb.auth.signUp({ email, password });
-      state.textContent = error ? ("Sign up error: " + error.message) : "Sign-up OK. Now Sign in.";
-    };
+signupBtn.onclick = async () => {
+  const email = (emailEl.value||"").trim();
+  const password = passEl.value||"";
+  if (!email || !password) return setAuth("Enter email and password");
+  const { error } = await sb.auth.signUp({ email, password });
+  setAuth(error ? "Sign up error: " + error.message : "Signed up. Now press Sign in.");
+};
 
-    document.getElementById("signin").onclick = async () => {
-      const email = (emailEl.value||"").trim();
-      const password = passEl.value||"";
-      if (!email || !password) { state.textContent = "need email+password"; return; }
-      const { error } = await sb.auth.signInWithPassword({ email, password });
-      state.textContent = error ? ("Sign in error: " + error.message) : "Signed in.";
-      await showUser();
-    };
+signinBtn.onclick = async () => {
+  const email = (emailEl.value||"").trim();
+  const password = passEl.value||"";
+  if (!email || !password) return setAuth("Enter email and password");
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  setAuth(error ? "Sign in error: " + error.message : "Signed in.");
+  if (!error) showUser();
+};
+showUser();
 
     // Raw HTTP test bypassing SDK
     document.getElementById("rawTest").onclick = async () => {
