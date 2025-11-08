@@ -249,3 +249,58 @@ function renderWeeklyReport(){
 render();
 renderAchievements();
 renderWeeklyReport();
+// ---- Focus Mode: Wake Lock + Fullscreen + Exit guard ----
+const focusOn  = document.getElementById("focusOn");
+const focusOff = document.getElementById("focusOff");
+
+let wakeLock = null;
+
+async function requestWakeLock(){
+  try {
+    if ("wakeLock" in navigator && !wakeLock) {
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", ()=>{ wakeLock = null; });
+    }
+  } catch(e){ console.log("WakeLock error", e); }
+}
+
+async function releaseWakeLock(){
+  try { if (wakeLock) { await wakeLock.release(); wakeLock = null; } }
+  catch(e){ /* ignore */ }
+}
+
+async function enterFullscreen(){
+  const el = document.documentElement;
+  if (el.requestFullscreen) await el.requestFullscreen();
+}
+
+async function exitFullscreen(){
+  if (document.fullscreenElement && document.exitFullscreen) {
+    await document.exitFullscreen();
+  }
+}
+
+// warn if leaving while timer running
+function beforeUnloadHandler(e){
+  if (tick) { e.preventDefault(); e.returnValue = ""; }
+}
+window.addEventListener("visibilitychange", ()=>{
+  // auto-pause if user switches apps or tabs
+  if (document.visibilityState === "hidden" && tick) {
+    pauseBtn.click();
+  }
+});
+
+focusOn.onclick = async () => {
+  await enterFullscreen();
+  await requestWakeLock();
+  window.addEventListener("beforeunload", beforeUnloadHandler);
+  alert("Focus Mode on. Screen stays awake. Exiting will ask for confirmation.");
+};
+
+focusOff.onclick = async () => {
+  await releaseWakeLock();
+  await exitFullscreen();
+  window.removeEventListener("beforeunload", beforeUnloadHandler);
+  alert("Focus Mode off.");
+};
