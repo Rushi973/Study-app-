@@ -1,40 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="./supabase.js"></script>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#c0522a">
+
+  <!-- Style -->
   <link rel="stylesheet" href="style.css">
+
+  <!-- Supabase SDK (leave, needed for future features) -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="./supabase.js"></script>
+
   <title>Study App</title>
 </head>
+
 <body>
   <div class="container">
-    <h1>Study App</h1>
-<div class="panel">
-  <h3>Sign in</h3>
-  <input id="email" placeholder="email">
-  <input id="password" type="password" placeholder="password">
-  <button id="signup">Sign up</button>
-  <button id="signin">Sign in</button>
-  <div id="authState"></div>
-</div>
+
+    <h1>Study Stopwatch</h1>
+
     <div class="panel">
       <div id="timer">00:00:00</div>
       <div class="controls">
         <button id="start">Start</button>
         <button id="pause">Pause</button>
         <button id="reset">Reset</button>
-        <button id="save">Save Achievement</button>
-        <button id="focusOn">Enter Focus Mode</button>
-        <button id="focusOff">Exit Focus Mode</button>
       </div>
       <p id="status"></p>
     </div>
 
-    <div class="panel">
-      <h3>Weekly Report</h3>
-      <div id="report">No data yet.</div>
+  </div>
+
+  <!-- Script -->
+  <script src="script.js"></script>
+</body>
+</html>      <div id="report">No data yet.</div>
     </div>
 
     <div class="panel">
