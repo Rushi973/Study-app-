@@ -4,37 +4,151 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#c0522a" />
-  <title>Study Stopwatch</title>
+  <title>Study Timer</title>
   <style>
     :root{--terra:#c0522a;--beige:#f3eadf;--card:#fff7f1;--ink:#2a2a2a}
     *{box-sizing:border-box}
     body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--beige);color:var(--ink)}
     .container{max-width:720px;margin:24px auto;padding:16px}
-    .panel{background:var(--card);border:1px solid #efd8c9;border-radius:12px;padding:16px}
+    .panel{background:var(--card);border:1px solid #efd8c9;border-radius:12px;padding:16px;margin:12px 0}
     h1{margin:0 0 12px;color:var(--terra)}
     #timer{font-size:56px;text-align:center;margin:16px 0}
-    .controls{display:flex;justify-content:center;gap:10px}
-    button{padding:10px 16px;border-radius:8px;background:var(--terra);border:none;color:#fff;font-weight:600}
-    button:active{transform:scale(0.97)}
-    #status{text-align:center;margin-top:8px}
+    .controls{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+    button{padding:10px 16px;border-radius:8px;background:var(--terra);border:none;color:#fff;font-weight:600;cursor:pointer}
+    button:active{transform:scale(0.98)}
+    #status{text-align:center;margin-top:6px}
+    ul{margin:8px 0 0 18px}
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Study Stopwatch</h1>
+    <h1>Study Timer</h1>
+
     <div class="panel">
       <div id="timer">00:00:00</div>
       <div class="controls">
         <button id="start">Start</button>
         <button id="pause">Pause</button>
         <button id="reset">Reset</button>
+        <button id="save">Save Achievement</button>
       </div>
       <p id="status"></p>
+    </div>
+
+    <div class="panel">
+      <h3>Weekly Report</h3>
+      <div id="report">No data yet.</div>
+    </div>
+
+    <div class="panel">
+      <h3>Achievements</h3>
+      <ul id="achievements"></ul>
     </div>
   </div>
 
   <script>
-    // single-file stopwatch
+    // ========= Stopwatch =========
+    let startTime=0, elapsed=0, tick=null;
+    const $=id=>document.getElementById(id);
+    const timerEl=$("timer"), statusEl=$("status");
+    const startBtn=$("start"), pauseBtn=$("pause"), resetBtn=$("reset"), saveBtn=$("save");
+    const achievementsEl=$("achievements"), reportEl=$("report");
+
+    const fmt=ms=>{
+      const s=Math.floor(ms/1000);
+      const h=String(Math.floor(s/3600)).padStart(2,"0");
+      const m=String(Math.floor((s%3600)/60)).padStart(2,"0");
+      const sec=String(s%60).padStart(2,"0");
+      return `${h}:${m}:${sec}`;
+    };
+    const nowTotal=()=>elapsed+(tick?Date.now()-startTime:0);
+    const render=()=>{ timerEl.textContent=fmt(nowTotal()); };
+
+    startBtn.onclick=()=>{
+      if(tick) return;
+      startTime=Date.now();
+      tick=setInterval(render,200);
+      statusEl.textContent="Running";
+    };
+    pauseBtn.onclick=()=>{
+      if(!tick) return;
+      clearInterval(tick); tick=null;
+      elapsed+=Date.now()-startTime;
+      render(); statusEl.textContent="Paused";
+    };
+    resetBtn.onclick=()=>{
+      if(tick){ clearInterval(tick); tick=null; }
+      startTime=0; elapsed=0; render(); statusEl.textContent="Reset";
+    };
+
+    // ========= Storage =========
+    const loadSessions=()=>{ try{return JSON.parse(localStorage.getItem("sessions")||"[]");}catch{return[];} };
+    const saveSessions=list=>localStorage.setItem("sessions",JSON.stringify(list));
+    const addSession=ms=>{
+      const list=loadSessions();
+      list.push({ ms, endedAt: Date.now() });
+      saveSessions(list);
+    };
+
+    // ========= UI: Achievements =========
+    function renderAchievements(){
+      const list=loadSessions().slice().reverse();
+      achievementsEl.innerHTML="";
+      if(list.length===0){ achievementsEl.innerHTML="<li>No achievements yet.</li>"; return; }
+      for(const s of list){
+        const li=document.createElement("li");
+        const d=new Date(s.endedAt);
+        li.textContent=`${fmt(s.ms)} on ${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
+        achievementsEl.appendChild(li);
+      }
+    }
+
+    // ========= Weekly Report (last 7 days) =========
+    function renderWeeklyReport(){
+      const list=loadSessions();
+      if(list.length===0){ reportEl.textContent="No data yet."; return; }
+
+      const now=Date.now(), weekAgo=now-7*24*3600*1000;
+      const recent=list.filter(s=>s.endedAt>=weekAgo);
+      if(recent.length===0){ reportEl.textContent="No sessions in the last 7 days."; return; }
+
+      const byDay=Array(7).fill(0), byHour=Array(24).fill(0);
+      for(const s of recent){
+        const d=new Date(s.endedAt);
+        byDay[d.getDay()]+=s.ms;
+        byHour[d.getHours()]+=s.ms;
+      }
+      const dayNames=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+      let bestDayIdx=0, bestDayVal=-1, bestHourIdx=0, bestHourVal=-1;
+      byDay.forEach((v,i)=>{ if(v>bestDayVal){bestDayVal=v;bestDayIdx=i;} });
+      byHour.forEach((v,i)=>{ if(v>bestHourVal){bestHourVal=v;bestHourIdx=i;} });
+
+      const totalMs=recent.reduce((a,b)=>a+b.ms,0);
+      reportEl.innerHTML =
+        `Total last 7 days: <b>${fmt(totalMs)}</b><br>`+
+        `Most productive day: <b>${dayNames[bestDayIdx]}</b> (${fmt(bestDayVal)})<br>`+
+        `Best study hour: <b>${String(bestHourIdx).padStart(2,"0")}:00</b> (${fmt(bestHourVal)})`;
+    }
+
+    // ========= Save Achievement =========
+    saveBtn.onclick=()=>{
+      const total=nowTotal();
+      if(total<1000){ alert("Timer too short to save."); return; }
+      if(tick){ clearInterval(tick); tick=null; elapsed+=Date.now()-startTime; }
+      addSession(elapsed);
+      startTime=0; elapsed=0; render();
+      statusEl.textContent="Saved";
+      renderAchievements();
+      renderWeeklyReport();
+    };
+
+    // init
+    render();
+    renderAchievements();
+    renderWeeklyReport();
+  </script>
+</body>
+</html>    // single-file stopwatch
     let startTime=0, elapsed=0, tick=null;
     const $=id=>document.getElementById(id);
     const timerEl=$("timer"), statusEl=$("status");
