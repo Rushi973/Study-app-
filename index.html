@@ -143,18 +143,27 @@ async function ping(){
     show("SDK/createClient error: " + (e?.message||e));
   }
 }
-
-signupBtn.onclick = async () => {
+signinBtn.onclick = async () => {
   const email = (emailEl.value||"").trim();
   const password = passEl.value||"";
-  if (!email || !password) return show("Enter email and password");
-  show("Signing up…");
+  authState.textContent = "Signing in...";
+
   try {
-    const { data, error } = await sb.auth.signUp({ email, password });
-    if (error) return show("Sign up error: " + error.message);
-    show("Sign-up OK. If email confirmation is OFF, proceed to Sign in.");
-  } catch(e){ show("Sign up JS error: " + (e?.message||e)); }
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      authState.textContent = "Sign in error: " + error.message;
+      return;
+    }
+
+    authState.textContent = "Signed in.";
+    await showUser();
+  }
+  catch(e){
+    authState.textContent = "JS error: " + e.message;
+  }
 };
+
 
 signinBtn.onclick = async () => {
   const email = (emailEl.value||"").trim();
