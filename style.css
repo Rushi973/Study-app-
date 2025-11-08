@@ -4,7 +4,8 @@
   --card:#fff7f1;
   --ink:#2a2a2a;
 }
-
+<style>#todoBox input{padding:8px;margin:4px}
+.todo-done{text-decoration:line-through;opacity:.6}<\style>
 *{box-sizing:border-box}
 body{
   margin:0;
