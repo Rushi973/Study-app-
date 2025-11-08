@@ -1,32 +1,41 @@
 :root{
-  --terra:#c0522a;        /* terracotta main */
-  --terra-600:#a64523;
-  --beige:#f3eadf;        /* background */
-  --ink:#2a2a2a;          /* text */
-  --card:#fff7f1;         /* panels */
+  --terra:#c0522a;
+  --beige:#f3eadf;
+  --card:#fff7f1;
+  --ink:#2a2a2a;
 }
 
 *{box-sizing:border-box}
 body{
-  margin:0; font-family:system-ui, Arial, sans-serif; color:var(--ink);
+  margin:0;
+  font-family:system-ui, Arial, sans-serif;
   background:var(--beige);
+  color:var(--ink);
 }
-.container{max-width:720px;margin:24px auto;padding:16px}
-h1{margin:0 0 12px 0; color:var(--terra)}
+.container{
+  max-width:720px;
+  margin:24px auto;
+  padding:16px;
+}
 .panel{
-  background:var(--card); border:1px solid #efd8c9; border-radius:12px;
-  padding:16px; margin:12px 0; box-shadow:0 1px 4px rgba(0,0,0,.04);
+  background:var(--card);
+  border:1px solid #efd8c9;
+  border-radius:12px;
+  padding:16px;
+  margin-top:20px;
 }
-#timer{font-size:56px;letter-spacing:2px;margin:8px 0 12px}
-
-.controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0}
-.controls button{
-  padding:10px 16px; border-radius:10px; border:1px solid var(--terra-600);
-  background:var(--terra); color:white; font-weight:600; cursor:pointer;
+#timer{font-size:56px;text-align:center;margin:16px 0;}
+.controls{
+  display:flex;
+  justify-content:center;
+  gap:10px;
 }
-.controls button:active{transform:translateY(1px)}
-label,input,button,ul{font-size:14px}
-ul{padding-left:18px}
-
-#todoBox input{padding:8px;margin:4px}
-.todo-done{text-decoration:line-through;opacity:.6}
+button{
+  padding:10px 16px;
+  border-radius:8px;
+  background:var(--terra);
+  border:none;
+  color:white;
+  font-weight:600;
+}
+button:active{transform:scale(0.97);}
