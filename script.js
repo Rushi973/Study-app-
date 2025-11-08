@@ -384,3 +384,42 @@ signinBtn && (signinBtn.onclick = async ()=>{
 });
 
 refreshAuthState();
+// --- Upload + Scan timetable (OCR) ---
+const ttFile = document.getElementById("ttFile");
+const ttBtn  = document.getElementById("ttUploadScan");
+const ttResult = document.getElementById("ttResult");
+
+ttBtn && (ttBtn.onclick = async () => {
+  const user = (await sb.auth.getUser()).data.user;
+  if (!user) {
+    alert("Sign in first.");
+    return;
+  }
+
+  if (!ttFile.files?.[0]) {
+    alert("Choose an image first.");
+    return;
+  }
+
+  const file = ttFile.files[0];
+  const path = `timetables/${user.id}/${Date.now()}-${file.name}`;
+
+  // upload to Supabase storage bucket (private)
+  const { error: uploadErr } = await sb.storage.from("timetables").upload(path.replace(/^timetables\//,""), file);
+  if (uploadErr) {
+    alert(uploadErr.message);
+    return;
+  }
+
+  // call edge function (we will create it next step)
+  const { data, error } = await sb.functions.invoke("ocr-timetable", {
+    body: { path },
+  });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  ttResult.innerHTML = JSON.stringify(data, null, 2);
+});
