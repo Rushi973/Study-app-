@@ -100,10 +100,7 @@
 
   <script>
     // Supabase init
-const sb = supabase.createClient(
-  "SUPABASE_URL",
-  "SUPABASE_ANON_KEY"
-);
+
     // ========= Stopwatch =========
     let startTime=0, elapsed=0, tick=null;
     const $=id=>document.getElementById(id);
@@ -115,6 +112,10 @@ const sb = supabase.createClient(
       const s=Math.floor(ms/1000);
       const h=String(Math.floor(s/3600)).padStart(2,"0");
       const m=String(Math.floor((s%3600)/60)).padStart(2,"0");
+  const sb = supabase.createClient(
+  "https://iwfesilevqjumoyfrpzt.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....(your key continues)...."
+);
       const sec=String(s%60).padStart(2,"0");
       return `${h}:${m}:${sec}`;
     };
