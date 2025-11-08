@@ -304,3 +304,57 @@ focusOff.onclick = async () => {
   window.removeEventListener("beforeunload", beforeUnloadHandler);
   alert("Focus Mode off.");
 };
+// ---- To-Dos (localStorage) ----
+const todoText = document.getElementById("todoText");
+const todoDue  = document.getElementById("todoDue");
+const todoAdd  = document.getElementById("todoAdd");
+const todoListEl = document.getElementById("todoList");
+
+function loadTodos(){ try{ return JSON.parse(localStorage.getItem("todos")||"[]"); }catch{ return []; } }
+function saveTodos(t){ localStorage.setItem("todos", JSON.stringify(t)); }
+
+function renderTodos(){
+  const items = loadTodos();
+  todoListEl.innerHTML = "";
+  if (items.length === 0){ todoListEl.innerHTML = "<li>No tasks yet.</li>"; return; }
+  items.forEach((t,idx)=>{
+    const li = document.createElement("li");
+    li.className = t.done ? "todo-done" : "";
+    const due = t.due ? ` — due ${t.due}` : "";
+    li.innerHTML = `
+      <input type="checkbox" ${t.done?"checked":""} data-idx="${idx}" class="todo-toggle">
+      <span>${t.text}${due}</span>
+      <button data-idx="${idx}" class="todo-del" style="float:right">Delete</button>
+    `;
+    todoListEl.appendChild(li);
+  });
+}
+
+todoAdd && (todoAdd.onclick = () => {
+  const text = (todoText.value||"").trim();
+  const due  = (todoDue.value||"").trim();
+  if (!text) { alert("Enter a task"); return; }
+  const items = loadTodos();
+  items.push({ text, due, done:false, createdAt: Date.now() });
+  saveTodos(items);
+  todoText.value = ""; todoDue.value = "";
+  renderTodos();
+});
+
+todoListEl && todoListEl.addEventListener("click", (e)=>{
+  const idx = e.target.getAttribute("data-idx");
+  if (e.target.classList.contains("todo-del")){
+    const items = loadTodos();
+    items.splice(Number(idx),1);
+    saveTodos(items);
+    renderTodos();
+  }
+  if (e.target.classList.contains("todo-toggle")){
+    const items = loadTodos();
+    items[Number(idx)].done = e.target.checked;
+    saveTodos(items);
+    renderTodos();
+  }
+});
+
+renderTodos();
