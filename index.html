@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#c0522a" />
-  <title>Study Timer</title>
+  <title>Study App</title>
   <style>
     :root{--terra:#c0522a;--beige:#f3eadf;--card:#fff7f1;--ink:#2a2a2a}
     *{box-sizing:border-box}
@@ -12,18 +12,23 @@
     .container{max-width:720px;margin:24px auto;padding:16px}
     .panel{background:var(--card);border:1px solid #efd8c9;border-radius:12px;padding:16px;margin:12px 0}
     h1{margin:0 0 12px;color:var(--terra)}
+    h3{margin:0 0 8px}
     #timer{font-size:56px;text-align:center;margin:16px 0}
     .controls{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
     button{padding:10px 16px;border-radius:8px;background:var(--terra);border:none;color:#fff;font-weight:600;cursor:pointer}
     button:active{transform:scale(0.98)}
     #status{text-align:center;margin-top:6px}
     ul{margin:8px 0 0 18px}
+    select,input{padding:8px;margin:4px}
+    #todoBox input{padding:8px;margin:4px}
+    .todo-done{text-decoration:line-through;opacity:.6}
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Study Timer</h1>
+    <h1>Study App</h1>
 
+    <!-- Stopwatch + Save -->
     <div class="panel">
       <div id="timer">00:00:00</div>
       <div class="controls">
@@ -35,46 +40,53 @@
       <p id="status"></p>
     </div>
 
+    <!-- Weekly Report -->
     <div class="panel">
       <h3>Weekly Report</h3>
       <div id="report">No data yet.</div>
     </div>
 
+    <!-- Achievements -->
     <div class="panel">
       <h3>Achievements</h3>
       <ul id="achievements"></ul>
     </div>
-    <div class="panel">
-  <h3>To-Dos</h3>
-  <div id="todoBox">
-    <input id="todoText" placeholder="Task" />
-    <input id="todoDue" type="date" />
-    <button id="todoAdd">Add</button>
-    <ul id="todoList"></ul>
-  </div>
-      <div class="panel">
-  <h3>Habit Tracker</h3>
-  <div>
-    <input id="habitName" placeholder="Habit name (e.g., Read 20 min)" />
-    <button id="habitAdd">Add Habit</button>
-  </div>
-  <div id="habitList"></div>
-</div>
 
-<div class="panel">
-  <h3>Weekly Schedule</h3>
-  <div>
-    <select id="schDay">
-      <option>Mon</option><option>Tue</option><option>Wed</option>
-      <option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
-    </select>
-    <input id="schStart" type="time" />
-    <input id="schEnd" type="time" />
-    <input id="schSubject" placeholder="Subject / Task" />
-    <button id="schAdd">Add</button>
-  </div>
-  <div id="scheduleList" style="margin-top:8px;"></div>
-</div>
+    <!-- To-Dos -->
+    <div class="panel">
+      <h3>To-Dos</h3>
+      <div id="todoBox">
+        <input id="todoText" placeholder="Task" />
+        <input id="todoDue" type="date" />
+        <button id="todoAdd">Add</button>
+        <ul id="todoList"></ul>
+      </div>
+    </div>
+
+    <!-- Habit Tracker -->
+    <div class="panel">
+      <h3>Habit Tracker</h3>
+      <div>
+        <input id="habitName" placeholder="Habit name (e.g., Read 20 min)" />
+        <button id="habitAdd">Add Habit</button>
+      </div>
+      <div id="habitList">No habits yet.</div>
+    </div>
+
+    <!-- Weekly Schedule -->
+    <div class="panel">
+      <h3>Weekly Schedule</h3>
+      <div>
+        <select id="schDay">
+          <option>Mon</option><option>Tue</option><option>Wed</option>
+          <option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
+        </select>
+        <input id="schStart" type="time" />
+        <input id="schEnd" type="time" />
+        <input id="schSubject" placeholder="Subject / Task" />
+        <button id="schAdd">Add</button>
+      </div>
+      <div id="scheduleList" style="margin-top:8px;">No items.</div>
     </div>
   </div>
 
@@ -113,16 +125,19 @@
       startTime=0; elapsed=0; render(); statusEl.textContent="Reset";
     };
 
-    // ========= Storage =========
-    const loadSessions=()=>{ try{return JSON.parse(localStorage.getItem("sessions")||"[]");}catch{return[];} };
-    const saveSessions=list=>localStorage.setItem("sessions",JSON.stringify(list));
+    // ========= Local storage helpers =========
+    const loadJSON = (k,def)=>{ try{return JSON.parse(localStorage.getItem(k)??def);}catch{return JSON.parse(def);} };
+    const saveJSON = (k,v)=>localStorage.setItem(k,JSON.stringify(v));
+
+    // ========= Sessions / Achievements =========
+    const loadSessions=()=>loadJSON("sessions","[]");
+    const saveSessions=v=>saveJSON("sessions",v);
     const addSession=ms=>{
       const list=loadSessions();
       list.push({ ms, endedAt: Date.now() });
       saveSessions(list);
     };
 
-    // ========= UI: Achievements =========
     function renderAchievements(){
       const list=loadSessions().slice().reverse();
       achievementsEl.innerHTML="";
@@ -135,7 +150,6 @@
       }
     }
 
-    // ========= Weekly Report (last 7 days) =========
     function renderWeeklyReport(){
       const list=loadSessions();
       if(list.length===0){ reportEl.textContent="No data yet."; return; }
@@ -162,7 +176,6 @@
         `Best study hour: <b>${String(bestHourIdx).padStart(2,"0")}:00</b> (${fmt(bestHourVal)})`;
     }
 
-    // ========= Save Achievement =========
     saveBtn.onclick=()=>{
       const total=nowTotal();
       if(total<1000){ alert("Timer too short to save."); return; }
@@ -174,235 +187,132 @@
       renderWeeklyReport();
     };
 
-    // init
-    render();
+    // ========= To-Dos =========
+    const todoText=$("todoText"), todoDue=$("todoDue"), todoAdd=$("todoAdd"), todoListEl=$("todoList");
+    const loadTodos=()=>loadJSON("todos","[]");
+    const saveTodos=t=>saveJSON("todos",t);
+
+    function renderTodos(){
+      const items=loadTodos();
+      todoListEl.innerHTML="";
+      if(items.length===0){ todoListEl.innerHTML="<li>No tasks yet.</li>"; return; }
+      items.forEach((t,idx)=>{
+        const li=document.createElement("li");
+        li.style.margin="6px 0";
+        li.className=t.done?"todo-done":"";
+        const due=t.due?` — due ${t.due}`:"";
+        li.innerHTML=`
+          <input type="checkbox" ${t.done?"checked":""} data-idx="${idx}" class="todo-toggle">
+          <span>${t.text}${due}</span>
+          <button data-idx="${idx}" class="todo-del" style="float:right">Delete</button>
+        `;
+        todoListEl.appendChild(li);
+      });
+    }
+    todoAdd && (todoAdd.onclick=()=>{
+      const text=(todoText.value||"").trim();
+      const due=(todoDue.value||"").trim();
+      if(!text){ alert("Enter a task"); return; }
+      const items=loadTodos();
+      items.push({ text, due, done:false, createdAt: Date.now() });
+      saveTodos(items);
+      todoText.value=""; todoDue.value="";
+      renderTodos();
+    });
+    todoListEl && todoListEl.addEventListener("click",(e)=>{
+      const idx=e.target.getAttribute("data-idx");
+      if(e.target.classList.contains("todo-del")){
+        const items=loadTodos(); items.splice(Number(idx),1); saveTodos(items); renderTodos();
+      }
+      if(e.target.classList.contains("todo-toggle")){
+        const items=loadTodos(); items[Number(idx)].done=e.target.checked; saveTodos(items); renderTodos();
+      }
+    });
+
+    // ========= Habit Tracker =========
+    const habitName=$("habitName"), habitAdd=$("habitAdd"), habitList=$("habitList");
+    const loadHabits=()=>loadJSON("habits","[]");
+    const saveHabits=h=>saveJSON("habits",h);
+    function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+    function renderHabits(){
+      const habits=loadHabits();
+      habitList.innerHTML="";
+      if(!habits.length){ habitList.textContent="No habits yet."; return; }
+      const days=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+      habits.forEach((h,idx)=>{
+        const wrap=document.createElement("div"); wrap.style.margin="8px 0";
+        const title=document.createElement("div");
+        title.innerHTML=`<b>${h.name}</b> <button data-idx="${idx}" class="habit-del" style="float:right">Delete</button>`;
+        wrap.appendChild(title);
+        const row=document.createElement("div");
+        days.forEach((d)=>{
+          const key=`${d}-${todayISO()}`;
+          const checked=!!(h.done&&h.done[key]);
+          const box=document.createElement("label");
+          box.style.marginRight="8px";
+          box.innerHTML=`<input type="checkbox" data-idx="${idx}" data-key="${key}" class="habit-toggle" ${checked?"checked":""}> ${d}`;
+          row.appendChild(box);
+        });
+        wrap.appendChild(row);
+        habitList.appendChild(wrap);
+      });
+    }
+    habitAdd && (habitAdd.onclick=()=>{
+      const name=(habitName.value||"").trim();
+      if(!name){ alert("Enter a habit name"); return; }
+      const habits=loadHabits(); habits.push({ name, done:{} }); saveHabits(habits);
+      habitName.value=""; renderHabits();
+    });
+    habitList && habitList.addEventListener("click",(e)=>{
+      if(e.target.classList.contains("habit-del")){
+        const idx=Number(e.target.getAttribute("data-idx"));
+        const habits=loadHabits(); habits.splice(idx,1); saveHabits(habits); renderHabits();
+      }
+    });
+    habitList && habitList.addEventListener("change",(e)=>{
+      if(e.target.classList.contains("habit-toggle")){
+        const idx=Number(e.target.getAttribute("data-idx"));
+        const key=e.target.getAttribute("data-key");
+        const habits=loadHabits(); habits[idx].done=habits[idx].done||{};
+        habits[idx].done[key]=e.target.checked; saveHabits(habits);
+      }
+    });
+
+    // ========= Weekly Schedule =========
+    const schDay=$("schDay"), schStart=$("schStart"), schEnd=$("schEnd"), schSubject=$("schSubject"), schAdd=$("schAdd"), scheduleList=$("scheduleList");
+    const loadSchedule=()=>loadJSON("schedule","[]");
+    const saveSchedule=s=>saveJSON("schedule",s);
+
+    function renderSchedule(){
+      const rows=loadSchedule();
+      if(!rows.length){ scheduleList.textContent="No items."; return; }
+      const order={Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6,Sun:7};
+      rows.sort((a,b)=>(order[a.day]-order[b.day])||(a.start<b.start?-1:1));
+      scheduleList.innerHTML=rows.map((r,i)=>
+        `${r.day} ${r.start}-${r.end} — ${r.subject} <button data-i="${i}" class="sch-del" style="float:right">Delete</button>`
+      ).join("<br>");
+    }
+    schAdd && (schAdd.onclick=()=>{
+      const day=schDay.value, start=schStart.value, end=schEnd.value, subject=(schSubject.value||"").trim();
+      if(!day||!start||!end||!subject){ alert("Fill all fields"); return; }
+      const rows=loadSchedule(); rows.push({ day, start, end, subject }); saveSchedule(rows);
+      schSubject.value=""; schStart.value=""; schEnd.value=""; renderSchedule();
+    });
+    scheduleList && scheduleList.addEventListener("click",(e)=>{
+      if(e.target.classList.contains("sch-del")){
+        const i=Number(e.target.getAttribute("data-i"));
+        const rows=loadSchedule(); rows.splice(i,1); saveSchedule(rows); renderSchedule();
+      }
+    });
+
+    // ===== Init screens =====
+    render();           // timer
     renderAchievements();
     renderWeeklyReport();
-    // ===== To-Dos (localStorage) =====
-const todoText = document.getElementById("todoText");
-const todoDue  = document.getElementById("todoDue");
-const todoAdd  = document.getElementById("todoAdd");
-const todoListEl = document.getElementById("todoList");
-
-function loadTodos(){ try{return JSON.parse(localStorage.getItem("todos")||"[]");}catch{return[];} }
-function saveTodos(t){ localStorage.setItem("todos", JSON.stringify(t)); }
-
-function renderTodos(){
-  const items = loadTodos();
-  todoListEl.innerHTML = "";
-  if (items.length === 0){ todoListEl.innerHTML = "<li>No tasks yet.</li>"; return; }
-  items.forEach((t,idx)=>{
-    const li = document.createElement("li");
-    li.style.margin = "6px 0";
-    li.className = t.done ? "todo-done" : "";
-    const due = t.due ? ` — due ${t.due}` : "";
-    li.innerHTML = `
-      <input type="checkbox" ${t.done?"checked":""} data-idx="${idx}" class="todo-toggle">
-      <span>${t.text}${due}</span>
-      <button data-idx="${idx}" class="todo-del" style="float:right">Delete</button>
-    `;
-    todoListEl.appendChild(li);
-  });
-}
-
-todoAdd && (todoAdd.onclick = () => {
-  const text = (todoText.value||"").trim();
-  const due  = (todoDue.value||"").trim();
-  if (!text) { alert("Enter a task"); return; }
-  const items = loadTodos();
-  items.push({ text, due, done:false, createdAt: Date.now() });
-  saveTodos(items);
-  todoText.value = ""; todoDue.value = "";
-  renderTodos();
-});
-
-todoListEl && todoListEl.addEventListener("click", (e)=>{
-  const idx = e.target.getAttribute("data-idx");
-  if (e.target.classList.contains("todo-del")){
-    const items = loadTodos(); items.splice(Number(idx),1); saveTodos(items); renderTodos();
-  }
-  if (e.target.classList.contains("todo-toggle")){
-    const items = loadTodos(); items[Number(idx)].done = e.target.checked; saveTodos(items); renderTodos();
-  }
-});
-
-renderTodos();
-    // ===== Habit Tracker =====
-function loadHabits(){ try{return JSON.parse(localStorage.getItem("habits")||"[]");}catch{return[];} }
-function saveHabits(h){ localStorage.setItem("habits", JSON.stringify(h)); }
-
-const habitName = document.getElementById("habitName");
-const habitAdd  = document.getElementById("habitAdd");
-const habitList = document.getElementById("habitList");
-
-// build a 7-day grid for each habit, store checked days keyed by ISO date
-function todayISO(){ return new Date().toISOString().slice(0,10); }
-
-function renderHabits(){
-  const habits = loadHabits();
-  habitList.innerHTML = "";
-  if (!habits.length){ habitList.textContent = "No habits yet."; return; }
-  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-  habits.forEach((h,idx)=>{
-    const wrap = document.createElement("div");
-    wrap.style.margin = "8px 0";
-    const title = document.createElement("div");
-    title.innerHTML = `<b>${h.name}</b> <button data-idx="${idx}" class="habit-del" style="float:right">Delete</button>`;
-    wrap.appendChild(title);
-    const row = document.createElement("div");
-    days.forEach((d,i)=>{
-      const key = `${d}-${todayISO()}`; // simple per-day key
-      const checked = !!h.done?.[key];
-      const box = document.createElement("label");
-      box.style.marginRight = "8px";
-      box.innerHTML = `<input type="checkbox" data-idx="${idx}" data-key="${key}" class="habit-toggle" ${checked?"checked":""}> ${d}`;
-      row.appendChild(box);
-    });
-    wrap.appendChild(row);
-    habitList.appendChild(wrap);
-  });
-}
-habitAdd && (habitAdd.onclick = ()=>{
-  const name = (habitName.value||"").trim();
-  if (!name) { alert("Enter a habit name"); return; }
-  const habits = loadHabits();
-  habits.push({ name, done:{} });
-  saveHabits(habits);
-  habitName.value = "";
-  renderHabits();
-});
-habitList && habitList.addEventListener("click",(e)=>{
-  if (e.target.classList.contains("habit-del")){
-    const idx = Number(e.target.getAttribute("data-idx"));
-    const habits = loadHabits(); habits.splice(idx,1); saveHabits(habits); renderHabits();
-  }
-});
-habitList && habitList.addEventListener("change",(e)=>{
-  if (e.target.classList.contains("habit-toggle")){
-    const idx = Number(e.target.getAttribute("data-idx"));
-    const key = e.target.getAttribute("data-key");
-    const habits = loadHabits();
-    habits[idx].done = habits[idx].done||{};
-    habits[idx].done[key] = e.target.checked;
-    saveHabits(habits);
-  }
-});
-renderHabits();
-
-// ===== Weekly Schedule (manual) =====
-function loadSchedule(){ try{return JSON.parse(localStorage.getItem("schedule")||"[]");}catch{return[];} }
-function saveSchedule(s){ localStorage.setItem("schedule", JSON.stringify(s)); }
-
-const schDay = document.getElementById("schDay");
-const schStart = document.getElementById("schStart");
-const schEnd = document.getElementById("schEnd");
-const schSubject = document.getElementById("schSubject");
-const schAdd = document.getElementById("schAdd");
-const scheduleList = document.getElementById("scheduleList");
-
-function renderSchedule(){
-  const rows = loadSchedule();
-  if (!rows.length){ scheduleList.textContent = "No items."; return; }
-  const order = {Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6,Sun:7};
-  rows.sort((a,b)=> (order[a.day]-order[b.day]) || (a.start < b.start ? -1 : 1));
-  scheduleList.innerHTML = rows.map((r,i)=>
-    `${r.day} ${r.start}-${r.end} — ${r.subject} <button data-i="${i}" class="sch-del" style="float:right">Delete</button>`
-  ).join("<br>");
-}
-schAdd && (schAdd.onclick = ()=>{
-  const day = schDay.value;
-  const start = schStart.value;
-  const end = schEnd.value;
-  const subject = (schSubject.value||"").trim();
-  if (!day || !start || !end || !subject){ alert("Fill all fields"); return; }
-  const rows = loadSchedule();
-  rows.push({ day, start, end, subject });
-  saveSchedule(rows);
-  schSubject.value = ""; schStart.value = ""; schEnd.value = "";
-  renderSchedule();
-});
-scheduleList && scheduleList.addEventListener("click",(e)=>{
-  if (e.target.classList.contains("sch-del")){
-    const i = Number(e.target.getAttribute("data-i"));
-    const rows = loadSchedule(); rows.splice(i,1); saveSchedule(rows); renderSchedule();
-  }
-});
-renderSchedule();
-    // single-file stopwatch
-    let startTime=0, elapsed=0, tick=null;
-    const $=id=>document.getElementById(id);
-    const timerEl=$("timer"), statusEl=$("status");
-    const startBtn=$("start"), pauseBtn=$("pause"), resetBtn=$("reset");
-
-    const fmt=ms=>{
-      const s=Math.floor(ms/1000);
-      const h=String(Math.floor(s/3600)).padStart(2,"0");
-      const m=String(Math.floor((s%3600)/60)).padStart(2,"0");
-      const sec=String(s%60).padStart(2,"0");
-      return `${h}:${m}:${sec}`;
-    };
-    const nowTotal=()=>elapsed+(tick?Date.now()-startTime:0);
-    const render=()=>{ timerEl.textContent=fmt(nowTotal()); };
-
-    startBtn.onclick=()=>{
-      if(tick) return;
-      startTime=Date.now();
-      tick=setInterval(render,200);
-      statusEl.textContent="Running";
-    };
-    pauseBtn.onclick=()=>{
-      if(!tick) return;
-      clearInterval(tick); tick=null;
-      elapsed+=Date.now()-startTime;
-      render(); statusEl.textContent="Paused";
-    };
-    resetBtn.onclick=()=>{
-      if(tick){ clearInterval(tick); tick=null; }
-      startTime=0; elapsed=0; render(); statusEl.textContent="Reset";
-    };
-    render();
+    renderTodos();
+    renderHabits();
+    renderSchedule();
   </script>
-</body>
-</html>    
-  </script>
-</body>
-</html></html>      <div id="report">No data yet.</div>
-    </div>
-
-    <div class="panel">
-      <h3>Achievements</h3>
-      <ul id="achievements"></ul>
-    </div>
-
-    <div class="panel">
-      <h3>Break & Audio</h3>
-      <div>
-        <label>Audio URL:</label>
-        <input id="audioUrl" placeholder="https://example.com/hanuman-chalisa.mp3" style="width:100%;max-width:420px">
-        <button id="saveAudio">Save Audio</button>
-        <label style="display:block;margin-top:8px;">
-          <input type="checkbox" id="autoPlay"> Auto-play during long-session break
-        </label>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h3>To-Dos</h3>
-      <div id="todoBox">
-        <input id="todoText" placeholder="Task" />
-        <input id="todoDue" type="date" />
-        <button id="todoAdd">Add</button>
-        <ul id="todoList"></ul>
-      </div>
-      <div class="panel">
-  <h3>Scan Timetable (OCR)</h3>
-  <input type="file" id="ttFile" accept="image/*">
-  <button id="ttUploadScan">Upload & Scan</button>
-  <div id="ttResult"></div>
-      </div>
-    </div>
-  </div>
-
-  <script src="script.js"></script>
 </body>
 </html>
