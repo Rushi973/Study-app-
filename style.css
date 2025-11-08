@@ -5,7 +5,9 @@
   --ink:#2a2a2a;
 }
 <style>#todoBox input{padding:8px;margin:4px}
-.todo-done{text-decoration:line-through;opacity:.6}<\style>
+.todo-done{text-decoration:line-through;opacity:.6}
+select,input{padding:8px;margin:4px}
+<\style>
 *{box-sizing:border-box}
 body{
   margin:0;
