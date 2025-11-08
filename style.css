@@ -1,9 +1,32 @@
-body { font-family: system-ui, Arial, sans-serif; text-align:center; margin:40px; }
-#timer { font-size: 56px; letter-spacing: 2px; margin: 20px 0; }
-.controls button { font-size: 16px; padding: 10px 16px; margin: 6px; }
-#status { margin-top: 10px; font-size: 14px; }
-.controls button { font-size:16px; padding:10px 16px; margin:6px; }
-#todoBox { max-width: 480px; margin: 0 auto; }
-#todoBox input { padding: 8px; margin: 4px; }
-#todoList li { text-align: left; margin: 6px 0; }
-.todo-done { text-decoration: line-through; opacity: 0.6; }
+:root{
+  --terra:#c0522a;        /* terracotta main */
+  --terra-600:#a64523;
+  --beige:#f3eadf;        /* background */
+  --ink:#2a2a2a;          /* text */
+  --card:#fff7f1;         /* panels */
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; font-family:system-ui, Arial, sans-serif; color:var(--ink);
+  background:var(--beige);
+}
+.container{max-width:720px;margin:24px auto;padding:16px}
+h1{margin:0 0 12px 0; color:var(--terra)}
+.panel{
+  background:var(--card); border:1px solid #efd8c9; border-radius:12px;
+  padding:16px; margin:12px 0; box-shadow:0 1px 4px rgba(0,0,0,.04);
+}
+#timer{font-size:56px;letter-spacing:2px;margin:8px 0 12px}
+
+.controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0}
+.controls button{
+  padding:10px 16px; border-radius:10px; border:1px solid var(--terra-600);
+  background:var(--terra); color:white; font-weight:600; cursor:pointer;
+}
+.controls button:active{transform:translateY(1px)}
+label,input,button,ul{font-size:14px}
+ul{padding-left:18px}
+
+#todoBox input{padding:8px;margin:4px}
+.todo-done{text-decoration:line-through;opacity:.6}
