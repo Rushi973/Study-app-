@@ -1,1 +1,2 @@
-console.log("app running")
+alert("Script connected");
+console.log("JS working");
