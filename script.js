@@ -1,7 +1,8 @@
 // ---- timer state ----
+document.addEventListener("DOMContentLoaded", () => {
 let startTime = 0;
 let elapsed = 0;
-let tick = null;
+let tick = null;});
 
 const $ = (id) => document.getElementById(id);
 const timerEl = $("timer");
