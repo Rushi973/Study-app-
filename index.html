@@ -1,24 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#c0522a">
-
-  <!-- Style -->
-  <link rel="stylesheet" href="style.css">
-
-  <!-- Supabase SDK (leave, needed for future features) -->
-  <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-  <script src="./supabase.js"></script>
-
-  <title>Study App</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#c0522a" />
+  <title>Study Stopwatch</title>
+  <style>
+    :root{--terra:#c0522a;--beige:#f3eadf;--card:#fff7f1;--ink:#2a2a2a}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--beige);color:var(--ink)}
+    .container{max-width:720px;margin:24px auto;padding:16px}
+    .panel{background:var(--card);border:1px solid #efd8c9;border-radius:12px;padding:16px}
+    h1{margin:0 0 12px;color:var(--terra)}
+    #timer{font-size:56px;text-align:center;margin:16px 0}
+    .controls{display:flex;justify-content:center;gap:10px}
+    button{padding:10px 16px;border-radius:8px;background:var(--terra);border:none;color:#fff;font-weight:600}
+    button:active{transform:scale(0.97)}
+    #status{text-align:center;margin-top:8px}
+  </style>
 </head>
-
 <body>
   <div class="container">
-
     <h1>Study Stopwatch</h1>
-
     <div class="panel">
       <div id="timer">00:00:00</div>
       <div class="controls">
@@ -28,13 +31,45 @@
       </div>
       <p id="status"></p>
     </div>
-
   </div>
 
-  <!-- Script -->
-  <script src="script.js"></script>
+  <script>
+    // single-file stopwatch
+    let startTime=0, elapsed=0, tick=null;
+    const $=id=>document.getElementById(id);
+    const timerEl=$("timer"), statusEl=$("status");
+    const startBtn=$("start"), pauseBtn=$("pause"), resetBtn=$("reset");
+
+    const fmt=ms=>{
+      const s=Math.floor(ms/1000);
+      const h=String(Math.floor(s/3600)).padStart(2,"0");
+      const m=String(Math.floor((s%3600)/60)).padStart(2,"0");
+      const sec=String(s%60).padStart(2,"0");
+      return `${h}:${m}:${sec}`;
+    };
+    const nowTotal=()=>elapsed+(tick?Date.now()-startTime:0);
+    const render=()=>{ timerEl.textContent=fmt(nowTotal()); };
+
+    startBtn.onclick=()=>{
+      if(tick) return;
+      startTime=Date.now();
+      tick=setInterval(render,200);
+      statusEl.textContent="Running";
+    };
+    pauseBtn.onclick=()=>{
+      if(!tick) return;
+      clearInterval(tick); tick=null;
+      elapsed+=Date.now()-startTime;
+      render(); statusEl.textContent="Paused";
+    };
+    resetBtn.onclick=()=>{
+      if(tick){ clearInterval(tick); tick=null; }
+      startTime=0; elapsed=0; render(); statusEl.textContent="Reset";
+    };
+    render();
+  </script>
 </body>
-</html>      <div id="report">No data yet.</div>
+</html></html>      <div id="report">No data yet.</div>
     </div>
 
     <div class="panel">
