@@ -334,7 +334,53 @@
         const rows=loadSchedule(); rows.splice(i,1); saveSchedule(rows); renderSchedule();
       }
     });
+// ===== Supabase Auth (robust) =====
+const sb = window.supabase.createClient(
+  "https://iwfesilevqjumoyfrpzt.supabase.co",  // <-- your URL
+  "REPLACE_WITH_YOUR_ANON_KEY"                 // <-- your anon key
+);
 
+const emailEl = document.getElementById("email");
+const passEl  = document.getElementById("password");
+const signupBtn = document.getElementById("signup");
+const signinBtn = document.getElementById("signin");
+const authState = document.getElementById("authState");
+
+function setStatus(msg){ authState.textContent = msg; }
+
+async function showUser(){
+  const { data, error } = await sb.auth.getUser();
+  if (error) setStatus("getUser error: " + error.message);
+  else setStatus(data.user ? `Signed in: ${data.user.email}` : "Not signed in");
+}
+
+// keep UI in sync with auth changes
+sb.auth.onAuthStateChange((_event, _session) => { showUser(); });
+
+signupBtn.onclick = async () => {
+  try {
+    const email = (emailEl.value||"").trim();
+    const password = passEl.value||"";
+    if (!email || !password) return setStatus("Enter email and password");
+    const { error } = await sb.auth.signUp({ email, password });
+    if (error) return setStatus("Sign up error: " + error.message);
+    setStatus("Sign-up email sent. Confirm it, then sign in.");
+  } catch(e){ setStatus("Sign up JS error: " + e.message); }
+};
+
+signinBtn.onclick = async () => {
+  try {
+    const email = (emailEl.value||"").trim();
+    const password = passEl.value||"";
+    if (!email || !password) return setStatus("Enter email and password");
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) return setStatus("Sign in error: " + error.message);
+    setStatus("Signed in. Loading user…");
+    await showUser();
+  } catch(e){ setStatus("Sign in JS error: " + e.message); }
+};
+
+showUser();
     // ===== Init screens =====
     render();           // timer
     renderAchievements();
