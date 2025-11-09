@@ -25,13 +25,13 @@
   <pre id="rawOut"></pre>
 
   <script>
-    // ---- Supabase Auth (working) ----
+// ---- Supabase Auth (working) ----
 const SB_URL  = "https://iwfesilevqjumoyfrpzt.supabase.co";
 const SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3ZmVzaWxldnFqdW1veWZycHp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MTgwOTYsImV4cCI6MjA3ODA5NDA5Nn0.YMtYRdS6NoEkyZibCa0RWAspfs5uWd14gmBEfFFKAWQ";
 const sb = window.supabase.createClient(SB_URL, SB_ANON);
 
-const emailEl   = document.getElementById("email");
-const passEl    = document.getElementById("password");
+const emailEl = document.getElementById("email");
+const passEl  = document.getElementById("password");
 const signupBtn = document.getElementById("signup");
 const signinBtn = document.getElementById("signin");
 const authState = document.getElementById("authState");
