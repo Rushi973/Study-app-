@@ -510,7 +510,8 @@ const ttFile = document.getElementById("ttFile");
 const ttScanLocal = document.getElementById("ttScanLocal");
 const ttApply = document.getElementById("ttApply");
 const ttResult = document.getElementById("ttResult");
-
+showGroup();
+loadLeaderboard();
 let parsedRows = []; // temp buffer from OCR
 
 // simple parser: lines like "Mon 10:00-11:00 Math" or "Tue 9-10 Physics"
