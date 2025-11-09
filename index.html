@@ -353,6 +353,7 @@ async function loadLeaderboard(){
       if(total<1000){ alert("Timer too short to save."); return; }
       if(tick){ clearInterval(tick); tick=null; elapsed+=Date.now()-startTime; }
       addSession(elapsed);
+recordStudySession(elapsed);
       startTime=0; elapsed=0; render();
       statusEl.textContent="Saved";
       renderAchievements();
