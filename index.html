@@ -103,12 +103,12 @@
       <div id="scheduleList" style="margin-top:8px;">No items.</div>
     </div>
 
-    <!-- Scan Timetable (OCR) -->
     <div class="panel">
-      <h3>Scan Timetable (OCR)</h3>
-      <input type="file" id="ttFile" accept="image/*">
-      <button id="ttUploadScan" type="button">Upload & Scan</button>
-      <pre id="ttResult" style="white-space:pre-wrap;"></pre>
+  <h3>Scan Timetable (OCR)</h3>
+  <input type="file" id="ttFile" accept="image/*">
+  <button id="ttScanLocal" type="button">Scan locally</button>
+  <button id="ttApply" type="button" disabled>Apply to schedule</button>
+  <pre id="ttResult" style="white-space:pre-wrap;"></pre>
     </div>
   </div>
 
@@ -406,6 +406,69 @@ sb.auth.onAuthStateChange(async (event) => {
     showUser();
     const renderAll = () => { render(); renderAchievements(); renderWeeklyReport(); renderTodos(); renderHabits(); renderSchedule(); };
     renderAll();
+    // ===== Local OCR + parse timetable =====
+const ttFile = document.getElementById("ttFile");
+const ttScanLocal = document.getElementById("ttScanLocal");
+const ttApply = document.getElementById("ttApply");
+const ttResult = document.getElementById("ttResult");
+
+let parsedRows = []; // temp buffer from OCR
+
+// simple parser: lines like "Mon 10:00-11:00 Math" or "Tue 9-10 Physics"
+function parseTimetable(txt){
+  const out = [];
+  const dayMap = {mon:"Mon",tue:"Tue",tues:"Tue",wed:"Wed",thu:"Thu",thur:"Thu",fri:"Fri",sat:"Sat",sun:"Sun"};
+  const lines = txt.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  for (const line of lines){
+    const l = line.toLowerCase().replace(/\s+/g," ");
+    const dayKey = Object.keys(dayMap).find(d => l.startsWith(d+" "));
+    if (!dayKey) continue;
+    // time patterns
+    const m = l.match(/(\d{1,2})(?:[:.](\d{2}))?\s*-\s*(\d{1,2})(?:[:.](\d{2}))?/);
+    if (!m) continue;
+    const sh = m[1].padStart(2,"0"), sm = (m[2]||"00").padStart(2,"0");
+    const eh = m[3].padStart(2,"0"), em = (m[4]||"00").padStart(2,"0");
+    const subject = line.replace(/^[^\s]+\s+/, "")  // drop day
+                        .replace(m[0], "")          // drop time range
+                        .replace(/[-–—]|at|to/ig," ")
+                        .trim();
+    out.push({ day: dayMap[dayKey], start: `${sh}:${sm}`, end: `${eh}:${em}`, subject: subject || "Study" });
+  }
+  return out;
+}
+
+ttScanLocal.onclick = async () => {
+  if (!ttFile.files?.[0]) { ttResult.textContent = "Choose an image first."; return; }
+  ttResult.textContent = "Scanning…";
+  try{
+    const file = ttFile.files[0];
+    const imgURL = URL.createObjectURL(file);
+    const { data:{ text } } = await Tesseract.recognize(imgURL, 'eng', { logger:()=>{} });
+    URL.revokeObjectURL(imgURL);
+    parsedRows = parseTimetable(text);
+    if (parsedRows.length === 0){
+      ttResult.textContent = "OCR done, but no timetable rows detected.\n\nRaw text:\n" + text;
+      ttApply.disabled = true;
+      return;
+    }
+    ttResult.textContent = "Detected rows:\n" + parsedRows.map(r=>`${r.day} ${r.start}-${r.end} — ${r.subject}`).join("\n");
+    ttApply.disabled = false;
+  }catch(e){
+    ttResult.textContent = "OCR error: " + e.message;
+    ttApply.disabled = true;
+  }
+};
+
+ttApply.onclick = () => {
+  if (!parsedRows.length) return;
+  const rows = (localStorage.getItem("schedule") ? JSON.parse(localStorage.getItem("schedule")) : []);
+  rows.push(...parsedRows);
+  localStorage.setItem("schedule", JSON.stringify(rows));
+  parsedRows = [];
+  ttApply.disabled = true;
+  ttResult.textContent += "\n\nApplied to Weekly Schedule.";
+  renderSchedule(); // existing function
+};
   </script>
 </body>
 </html>
