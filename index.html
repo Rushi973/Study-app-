@@ -182,7 +182,90 @@ sb.auth.onAuthStateChange(async (event) => {
     alert(error ? ("Update error: " + error.message) : "Password updated. Now sign in.");
   }
 });
+// ===== Groups + Leaderboard =====
+const groupStatus = document.getElementById("groupStatus");
+const grpName = document.getElementById("grpName");
+const grpCode = document.getElementById("grpCode");
+const grpCreateBtn = document.getElementById("grpCreate");
+const grpJoinBtn = document.getElementById("grpJoin");
+const boardEl = document.getElementById("board");
 
+function setCurrentGroup(g){ localStorage.setItem("currentGroup", JSON.stringify(g)); }
+function getCurrentGroup(){ try{ return JSON.parse(localStorage.getItem("currentGroup")||"null"); }catch{ return null; } }
+function showGroup(){ const g=getCurrentGroup(); groupStatus.textContent = g ? `Group: ${g.name} (${g.code})` : "No group selected."; }
+
+function randomCode(n=6){ const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; return Array.from({length:n},()=>a[Math.floor(Math.random()*a.length)]).join(""); }
+
+grpCreateBtn.onclick = async () => {
+  const { data: u } = await sb.auth.getUser();
+  if (!u.user) return alert("Sign in first");
+  const name = (grpName.value||"").trim();
+  if (!name) return alert("Enter group name");
+
+  const code = randomCode();
+  const { data: g, error: ge } = await sb.from("groups").insert({
+    name, code, created_by: u.user.id
+  }).select("*").single();
+  if (ge) return alert("Create error: " + ge.message);
+
+  const { error: me } = await sb.from("group_members").insert({ group_id: g.id, user_id: u.user.id });
+  if (me) return alert("Member add error: " + me.message);
+
+  setCurrentGroup(g); showGroup(); await loadLeaderboard();
+  alert("Group created. Share code: " + g.code);
+};
+
+grpJoinBtn.onclick = async () => {
+  const { data: u } = await sb.auth.getUser();
+  if (!u.user) return alert("Sign in first");
+  const code = (grpCode.value||"").trim().toUpperCase();
+  if (!code) return alert("Enter group code");
+
+  const { data: g, error: se } = await sb.from("groups").select("*").eq("code", code).single();
+  if (se) return alert("No such code");
+
+  const { error: me } = await sb.from("group_members").insert({ group_id: g.id, user_id: u.user.id });
+  if (me && !/duplicate key/.test(me.message)) return alert("Join error: " + me.message);
+
+  setCurrentGroup(g); showGroup(); await loadLeaderboard();
+  alert("Joined: " + g.name);
+};
+
+// record study time to group (minutes) when saving achievement
+async function recordStudySession(ms){
+  const g = getCurrentGroup();
+  if (!g) return;
+  const minutes = Math.max(0, Math.round(ms/60000));
+  const { data: u } = await sb.auth.getUser();
+  if (!u.user) return;
+  await sb.from("study_sessions").insert({ group_id: g.id, user_id: u.user.id, minutes });
+}
+
+// leaderboard for last 7 days
+async function loadLeaderboard(){
+  const g = getCurrentGroup();
+  if (!g){ boardEl.textContent = "No data."; return; }
+  const since = new Date(Date.now() - 7*24*3600*1000).toISOString();
+  const { data, error } = await sb
+    .from("study_sessions")
+    .select("user_id, minutes, created_at")
+    .eq("group_id", g.id)
+    .gte("created_at", since);
+  if (error){ boardEl.textContent = "Error: " + error.message; return; }
+  if (!data?.length){ boardEl.textContent = "No sessions yet."; return; }
+
+  const totals = {};
+  for (const r of data){ totals[r.user_id] = (totals[r.user_id]||0) + (r.minutes||0); }
+
+  // label current user with email, others as short id for now
+  const me = (await sb.auth.getUser()).data.user;
+  const rows = Object.entries(totals).map(([id,min])=>({
+    who: me && id===me.id ? me.email : id.slice(0,6),
+    min
+  })).sort((a,b)=>b.min-a.min);
+
+  boardEl.innerHTML = rows.map((r,i)=> `${i+1}. ${r.who}: ${r.min} min`).join("<br>");
+}
     // ---------- Stopwatch ----------
     let startTime=0, elapsed=0, tick=null;
     const $=id=>document.getElementById(id);
