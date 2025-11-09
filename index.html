@@ -147,6 +147,25 @@
       setAuth(error ? "Sign in error: " + error.message : "Signed in.");
       if (!error) showUser();
     };
+    // Send reset link to email
+document.getElementById("resetPw").onclick = async () => {
+  const email = (document.getElementById("email").value || "").trim();
+  if (!email) { authState.textContent = "Enter email"; return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: "https://rushi973.github.io/Study-app-/?pw=1"
+  });
+  authState.textContent = error ? ("Reset error: " + error.message) : "Reset link sent. Check email.";
+};
+
+// Handle the reset callback
+sb.auth.onAuthStateChange(async (event) => {
+  if (event === "PASSWORD_RECOVERY") {
+    const newPw = prompt("Enter new password (6+ chars)");
+    if (!newPw) return;
+    const { error } = await sb.auth.updateUser({ password: newPw });
+    alert(error ? ("Update error: " + error.message) : "Password updated. Now sign in.");
+  }
+});
 
     // ---------- Stopwatch ----------
     let startTime=0, elapsed=0, tick=null;
